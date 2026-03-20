@@ -1,0 +1,138 @@
+<!doctype html>
+<html>
+    <head lang="fr">
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- <link rel="icon" href="favicon.png"> -->
+        <title>SCRMBLD</title>
+
+        <style>
+            html {
+                user-select: none;
+                background-color: black;
+                color:#bababa;
+            }
+            .word {
+                padding: 10px 2px;
+                font-family: "Bluescreen";
+                transition: 0.5s;
+                font-size: 30pt;
+            }
+            #scrambled>.word {
+                cursor: pointer;
+            }
+            #scrambled>.word:hover:not(.rightanswer) {
+                text-shadow: 0 1px 10px rgba(255, 255, 0, 1);
+                transition: 0.5s;
+            }
+            #scrambled>.rightanswer {
+                text-shadow: 0 1px 10px rgba(68, 255, 0, 1);
+                transition: 0.5s;
+            }
+            #ref>.word {
+                opacity: 50%;
+            }
+            #scrambled {
+                animation: appear 1s;
+                animation-delay: 2s;
+                animation-fill-mode: forwards;
+                opacity: 0;
+            }
+            #ref {
+                animation: appear 1s;
+                animation-delay: 0.5s;
+                animation-fill-mode: forwards;
+                opacity: 0;
+            }
+            
+
+            @font-face {
+                font-family: "Bluescreen";
+                src: url("fonts/Blue\ Screen.ttf");
+            }
+
+            @keyframes appear {
+                0% { opacity: 0; }
+                100% { opacity: 1; }
+            }
+        </style>
+    </head>
+    <body>
+        <div id="ref"></div>
+        <div id="scrambled"></div>
+    </body>
+
+    <script>
+        function isLetter(str) {
+            return str.length === 1 && str.match(/[a-zA-Z]/i);
+        }
+
+        function spanClicked(e) {
+            e.preventDefault();
+
+            const target = e.target;
+            let word = target.innerText;
+
+            if (wordsRef[target.id.slice(10)] === word) {
+                return;
+            }
+
+            if (e.button === 0) {
+                word = word[1] + word[0] + word.slice(2);
+            }
+            else if (e.button === 2) {
+                word = word[word.length-1] + word.slice(0, -1);
+            }
+
+            target.innerText = word;
+
+            if (wordsRef[target.id.slice(10)] === word) {
+                target.classList.add("rightanswer");
+            }
+        }
+
+        function shuffleWord(w) {
+            const shuffled = [...w].map(value => ({ value, sort: Math.random() }))
+                .sort((a, b) => a.sort - b.sort)
+                .map(({ value }) => value).join("");
+
+            if (w.length > 3 && w == shuffled)
+                return shuffleWord(w);
+            return shuffled;
+        }
+
+
+        let textRef = "Le tri à bulles ou tri par propagation est un algorithme de tri.";
+        // let textRef = "SCRMBLD";
+        let wordsRef = textRef.split(" ");
+        let words = wordsRef.map(shuffleWord);
+        
+        let ref = document.getElementById("ref");
+
+        let scrambled = document.getElementById("scrambled");
+        for (let i in words) {
+            let span = document.createElement("span");
+            span.innerText = words[i];
+            span.id = "scrambled-" + i;
+            span.classList.add("word");
+            if (wordsRef[i] === words[i]) {
+                span.classList.add("rightanswer");
+            }
+            span.addEventListener("click", spanClicked);
+            span.addEventListener("contextmenu", spanClicked);
+            scrambled.appendChild(span);
+
+            let refSpan = document.createElement("span");
+            refSpan.innerText = wordsRef[i];
+            refSpan.classList.add("word");
+            ref.appendChild(refSpan);
+
+            let spacespan = document.createElement("span");
+            spacespan.innerText = " ";
+            scrambled.appendChild(spacespan);
+            let spacespanRef = document.createElement("span");
+            spacespanRef.innerText = " ";
+            ref.appendChild(spacespanRef);
+        }
+    </script>
+</html>
