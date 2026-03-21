@@ -1,0 +1,62 @@
+html {
+    user-select: none;
+    background-color: black;
+    color:#bababa;
+}
+.word {
+    padding: 10px 2px;
+    font-family: "Bluescreen";
+    transition: 0.5s;
+    font-size: 30pt;
+}
+#scrambled>.word:hover:not(.rightanswer) {
+    cursor: pointer;
+}
+#scrambled>.word:hover:not(.rightanswer) {
+    text-shadow: 0 1px 10px rgba(255, 255, 0, 1);
+    transition: 0.5s;
+}
+#scrambled>.word:hover:not(.rightanswer)>.begin-letter {
+    text-decoration: underline;
+    animation: underline 2s;
+}
+#scrambled>.rightanswer {
+    text-shadow: 0 1px 10px rgba(68, 255, 0, 1);
+    transition: 0.5s;
+}
+#ref>.word {
+    opacity: 50%;
+}
+#scrambled {
+    animation: appear 1s;
+    animation-delay: 2s;
+    animation-fill-mode: forwards;
+    opacity: 0;
+}
+#ref {
+    animation: appear 1s;
+    animation-delay: 0.5s;
+    animation-fill-mode: forwards;
+    opacity: 0;
+}
+
+.bg {
+    position: absolute;
+    z-index: -100000000000000000000000000000000000000000000;
+    pointer-events: none;
+    transition: 1s;
+}
+
+@font-face {
+    font-family: "Bluescreen";
+    src: url("fonts/Blue\ Screen.ttf");
+}
+
+@keyframes appear {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+@keyframes underline {
+    0% { text-decoration-color: #bababa00; }
+    100% { text-decoration-color: #bababaff; }
+}
