@@ -118,7 +118,7 @@
             if (numRightAnswers === numWords) {
                 // gangé
                 //tmp 
-                window.location.search = nextURLArray[lvlNum];
+                // window.location.search = nextURLArray[lvlNum];
             }
         }
 
@@ -145,7 +145,6 @@
             fetch(`assets/ascii/${i}.txt`)
                 .then(x => {
                     if (!x.ok) {
-                        console.log("tricheur");
                         throw new Error("tricheur");
                     }
                     return x.text()
@@ -163,7 +162,7 @@
                     bg.innerText = t;
                     document.getElementById("bgs").appendChild(bg);
                 })
-                .catch(_ => {});
+                .catch(_ => window.location.search = "?MDtIZXkh");
         }
 
         let wordsRef = textRef.split(" ");
