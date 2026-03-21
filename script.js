@@ -1,56 +1,56 @@
-let sentences = 
-[["hey?",
-"hello?",
-"can you hear me?"],
+// paraph[phrase]
+let content = 
+    [["hey?",
+    "hello?",
+    "can you hear me?"],
 
-["i went there",
-"tried to sleep",
-"devil sang"],
+    ["i went there",
+    "tried to sleep",
+    "devil sang",
+    "can you fix me?"],
 
-["can you fix me?"],
+    ["not sure if i was awake",
+    "dizzy or",
+    "SCRAMBLED",],
 
-["not sure if i was awake",
-"dizzy or",
-"SCRAMBLED",],
+    ["could my brain",
+    "be wired",
+    "the other way around?"],
 
-["could my brain",
-"be wired",
-"the other way around?"],
+    ["no devil lived on",
+    "lived on decaf",
+    "faced no devil"],
 
-["no devil lived on",
-"lived on decaf",
-"faced no devil"],
+    ["was it a cat I saw?",
+    "pspspsps but it",
+    "ran away",
+    "won't lovers revolt now?"],
 
-["was it a cat I saw?",
-"pspspsps but it",
-"ran away",
-"won't lovers revolt now?"],
+    ["well",
+    "at least i can",
+    "move on"]]
 
-["well at least",
-"i can",
-"move on"]]
+let paraphNum = 0
+let phraseNum = 0;
+
+let textRef = content[paraphNum][phraseNum];
+let wordsRef = textRef.split(" "); // La phrase de référence
+let words = wordsRef.map(shuffleWord); // La phrase shuffled
+
+let numRightAnswers = 0; // Nombre de mots bons / phrase
+let numWords = words.length; // Nom de mots dans la phrase
 
 
-// URL arguments format: BASE64(`lvlNum;textRef`)
-// const nextURLArray = [
-//     "?MTthY2Fi",
-// ];
+let ref = document.getElementById("ref");
+let scrambled = document.getElementById("scrambled");
 
-// let urlParams = window.location.search.slice(1);
-// if (urlParams.length === 0)
-//     window.location.search = "?MDtIZXkh";
-// const lvlParams = window.atob(urlParams).split(";");
-// const lvlNum = Number(lvlParams[0]);
-// const textRef = lvlParams[1]; 
-// const nextURL = nextURLArray[lvlNum];
-
-const lvlNum = 0;
-let textRef = sentences[0][lvlNum];
+let reversed = false;
 
 function spanClicked(e) {
     e.preventDefault();
 
     let target = e.target;
+
     if (target.classList.contains("begin-letter"))
         target = target.parentElement;
 
@@ -60,94 +60,179 @@ function spanClicked(e) {
         return;
     }
 
+    // Clic gauche
     if (e.button === 0) {
         word = word[1] + word[0] + word.slice(2);
     }
+
+    // Clic droit
     else if (e.button === 2) {
-        word = word[word.length-1] + word.slice(0, -1);
+        //word = word[word.length-1] + word.slice(0, -1);
+
+        // DEBUG : clic droit pour transformer le mot en mot bon
+        word = wordsRef[target.id.slice(10)];
+
     }
 
     target.innerHTML = "<span class='begin-letter'>" + word.slice(0, 2) + "</span>" + word.slice(2);
 
+    // Mot bon
     if (wordsRef[target.id.slice(10)] === word) {
         target.classList.add("rightanswer");
         numRightAnswers++;
-
-        document.getElementById(`bg-${lvlNum}`).style.opacity = 0.35 * (numRightAnswers / numWords);
     }
 
+    // Phrase bonne 
     if (numRightAnswers === numWords) {
-        // gangé
-        //tmp 
-        // window.location.search = nextURLArray[lvlNum];
+        setTimeout(()=>{nextPhrase()}, 1000);
     }
+}
+
+function nextPhrase() {
+
+    
+    phraseNum ++;
+    vanishBG(paraphNum, phraseNum);
+    
+    
+    // Dernière phrase du paraph -> paraph suivant
+    if (phraseNum  == content[paraphNum].length) {
+        phraseNum = 0;
+        emptyPreviousParaphBg(paraphNum);
+        if (paraphNum + 1 < content.length) paraphNum ++;
+        else return;
+    }
+    
+    fetchASCII(paraphNum, phraseNum);
+    textRef = content[paraphNum][phraseNum];
+    wordsRef = textRef.split(" ");
+    numRightAnswers = 0;
+    words = wordsRef.map(shuffleWord);
+    numWords = words.length;
+    
+    initPhrase(words);
+
+    if (paraphNum == 2 && phraseNum == 2) {
+        ref.style.display = "none";
+        document.querySelector("body").style.animation = "shake 0.5s infinite"
+    }
+
+    else if (paraphNum == 6) {
+        ref.style.display = "none";
+        document.querySelector("body").style.animation = "none"
+
+    }
+    else {
+        ref.style.display = "block";
+        document.querySelector("body").style.animation = "none"
+    }
+
+
 }
 
 function shuffleWord(w) {
     const shuffled = [...w].map(value => ({ value, sort: Math.random() }))
         .sort((a, b) => a.sort - b.sort)
-        .map(({ value }) => value).join("");
+        .map(({ value }) => value).join("")
 
-    if (w.length > 3 && w == shuffled)
-        return shuffleWord(w);
+    if (w == shuffled) {
+        if (w.length > 3) return shuffleWord(w);
+        else { numRightAnswers++ };
+        }
+
+    //TODO : empêcher boucle infinie
+
     return shuffled;
 }
 
-
-for (let i = 0; i <= lvlNum; i++) {
-    fetch(`assets/ascii/${i}.txt`)
-        .then(x => {
-            if (!x.ok) {
-                throw new Error("tricheur");
-            }
-            return x.text()
-        })
-        .then(t => {
-            let bg = document.createElement("pre");
-            bg.id = `bg-${i}`;
-            bg.classList.add("bg");
-            if (i != lvlNum) {
-                bg.style.opacity = 0.35 * ((1+i) / (1+lvlNum));
-            }
-            else {
-                bg.style.opacity = 0;
-            }
-            bg.innerText = t;
-            document.getElementById("bgs").appendChild(bg);
-        })
-        .catch(_ => window.location.search = "?MDtIZXkh");
+// Fetch ASCII art pour la phrase courante (= les ASCII d'avant + le ASCII courant)
+function fetchASCII(paraph, phrase) {
+        fetch(`assets/ascii/${paraph}/${phrase}.txt`)
+            .then(x => {
+                if (!x.ok) {
+                    throw new Error("Tricheur !!");
+                }
+                return x.text()
+            })
+            .then(t => {
+                let bg = document.createElement("pre");
+                bg.id = `bg-${paraph}-${phrase}`;
+                bg.classList.add("bg");
+                bg.innerText = t;
+                document.getElementById("bgs").appendChild(bg);
+            })
+            .catch(console.error("Erreur fecth ASCII"));
 }
 
-let wordsRef = textRef.split(" ");
-let words = wordsRef.map(shuffleWord);
-
-let numRightAnswers = 0;
-let numWords = words.length;
-
-let ref = document.getElementById("ref");
-
-let scrambled = document.getElementById("scrambled");
-for (let i in words) {
-    let span = document.createElement("span");
-    span.innerHTML = "<span class='begin-letter'>" + words[i].slice(0, 2) + "</span>" + words[i].slice(2);
-    span.id = "scrambled-" + i;
-    span.classList.add("word");
-    if (wordsRef[i] === words[i]) {
-        span.classList.add("rightanswer");
+function vanishBG(paraphNum, phraseNum) {
+    for (let i = 0; i < phraseNum; i++) {
+        let oldBg = document.getElementById(`bg-${paraphNum}-${i}`)
+        oldBg.style.animation = "none";
+        oldBg.style.opacity =  0.2/(phraseNum-i+1);
     }
-    span.addEventListener("click", spanClicked);
-    span.addEventListener("contextmenu", spanClicked);
-    scrambled.appendChild(span);
-
-    let refSpan = document.createElement("span");
-    refSpan.innerText = wordsRef[i];
-    refSpan.classList.add("word");
-    ref.appendChild(refSpan);
-
-    let spacespan = document.createElement("span");
-    spacespan.innerText = " ";
-    scrambled.appendChild(spacespan);
-    let spacespanRef = document.createElement("span");
-    spacespanRef.innerText = " ";
-    ref.appendChild(spacespanRef);
 }
+
+function emptyPreviousParaphBg(paraphNum) {
+    for (let i = 0; i < content[paraphNum].length ; i++) {
+        let oldBg = document.getElementById(`bg-${paraphNum}-${i}`)
+        oldBg.style.animation = "none";
+        oldBg.style.opacity =  0;
+    }
+}
+
+
+function initPhrase(words) {
+
+    ref.innerHTML = "";
+    scrambled.innerHTML = "";
+
+    for (let i in words) {
+        let span = document.createElement("span");
+        span.innerHTML = "<span class='begin-letter'>" + words[i].slice(0, 2) + "</span>" + words[i].slice(2);
+        span.id = "scrambled-" + i;
+        span.classList.add("word");
+        if (wordsRef[i] === words[i]) {
+            span.classList.add("rightanswer");
+        }
+        span.addEventListener("click", spanClicked);
+        span.addEventListener("contextmenu", spanClicked);
+        scrambled.appendChild(span);
+
+        let refSpan = document.createElement("span");
+        refSpan.innerText = wordsRef[i];
+        refSpan.classList.add("word");
+        ref.appendChild(refSpan);
+
+        let spacespan = document.createElement("span");
+        spacespan.innerText = " ";
+        scrambled.appendChild(spacespan);
+        let spacespanRef = document.createElement("span");
+        spacespanRef.innerText = " ";
+        ref.appendChild(spacespanRef);
+    }
+}
+
+initPhrase(words);
+fetchASCII(paraphNum, phraseNum);
+
+var myFont = new FontFace('myFont', 'url(fonts/BlueScreen.ttf)');
+
+myFont.load().then(() => {
+    document.fonts.add(myFont);
+    const myCanvas = document.getElementById("card");
+    const ctx = myCanvas.getContext("2d");
+        ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, 400, 250);
+	ctx.font = "20px myFont"; // set font
+    ctx.fillStyle = "#000000"; 
+    ctx.font = "16px myFont"; // set font
+    ctx.fillText("+++++++++++++++++++++++++++++++++++++",10,30);
+    ctx.fillText("SCRMBLD",70,70);
+    
+    ctx.font = "16px Arial"; // set font
+    ctx.fillText("00:00:23",70,100);
+    ctx.fillText("123 <->",80,120);
+
+})
+
+
