@@ -4,6 +4,9 @@ let audioStruct = {
 
     swapSound: null,
     rollSound: null,
+    rollSoundPs: null,
+    swapSoundPs: null,
+    scrmblSound: null,
     musicBackgrounds: [],
     musicLayers: [],
 }
@@ -13,9 +16,11 @@ function initSound(id) {
     const soundEl = document.getElementById(id);
     const src = audioStruct.ctx.createMediaElementSource(soundEl);
     const pan = audioStruct.ctx.createStereoPanner();
+    const gain = audioStruct.ctx.createGain();
     src.connect(pan);
-    pan.connect(audioStruct.ctx.destination);
-    return { el: soundEl, src: src, pan: pan.pan };
+    pan.connect(gain);
+    gain.connect(audioStruct.ctx.destination);
+    return { el: soundEl, src: src, gain: gain.gain, pan: pan.pan };
 }
 
 function initMusic(id) {
@@ -68,11 +73,15 @@ function initAudio() {
     audioStruct.ctx = new (window.AudioContext || window.webkitAudioContext)();
     audioStruct.listener = audioStruct.ctx.listener;
 
-    audioStruct.swapSound = initSound("swapSound", true);
+    audioStruct.swapSound = initSound("swapSound");
     audioStruct.swapSound.pan.setValueAtTime(-0.75, audioStruct.ctx.currentTime);
 
-    audioStruct.rollSound = initSound("rollSound", true);
+    audioStruct.rollSound = initSound("rollSound");
     audioStruct.rollSound.pan.setValueAtTime(+0.75, audioStruct.ctx.currentTime);
+
+    audioStruct.rollSoundPs = initSound("rollSoundPs");
+    audioStruct.swapSoundPs = initSound("swapSoundPs");
+    audioStruct.scrmblSound = initSound("scrmbldSound");
 
     for (let i = -2; i <= 8; i++)
         initMusic(i);
@@ -157,6 +166,8 @@ function spanClicked(e) {
 
     if (nbClick == 1) {
         timer();
+        if (!audioStruct.ctx)
+            initAudio();
     }
 
     let target = e.target;
@@ -174,20 +185,26 @@ function spanClicked(e) {
     if (e.button === codeSwap) {
         startMusics();
 
-        audioStruct.swapSound.el.play();
+        if (paraphNum === 5 && phraseNum === 1)
+            audioStruct.swapSoundPs.el.play();
+        else
+            audioStruct.swapSound.el.play();
         word = word[1] + word[0] + word.slice(2);
         nbSwap++;
     }
-
+    
     // Clic droit
     else if (e.button === codeRoll) {
         startMusics();
-
-        audioStruct.rollSound.el.play();
+        
+        if (paraphNum === 5 && phraseNum === 1)
+            audioStruct.rollSoundPs.el.play();
+        else
+            audioStruct.rollSound.el.play();
         word = word[word.length-1] + word.slice(0, -1);
 
         // DEBUG : clic droit pour transformer le mot en mot bon
-        // word = wordsRef[target.id.slice(10)];
+        word = wordsRef[target.id.slice(10)];
         nbRoll++;
     }
 
@@ -253,8 +270,15 @@ function nextPhrase() {
     if (paraphNum == 2 && phraseNum == 2) {
         ref.style.display = "none";
         document.querySelector("body").style.animation = "shake 0.5s infinite"
+        audioStruct.scrmblSound.el.play();
     }
+    else if (paraphNum == 3 && phraseNum == 0) {
+        audioStruct.scrmblSound.gain.setTargetAtTime(0., audioStruct.ctx.currentTime + 1, 0.25);
+        setTimeout(_ => { audioStruct.scrmblSound.el.pause(); }, 2000);
 
+        ref.style.display = "block";
+        document.querySelector("body").style.animation = "none";
+    }
     else if (paraphNum == 6) {
         ref.style.display = "none";
         document.querySelector("body").style.animation = "none"
@@ -268,11 +292,6 @@ function nextPhrase() {
         codeRoll = 0;
         audioStruct.swapSound.pan.setValueAtTime(+0.75, audioStruct.ctx.currentTime);
         audioStruct.rollSound.pan.setValueAtTime(-0.75, audioStruct.ctx.currentTime);
-    }
-
-    else {
-        ref.style.display = "block";
-        document.querySelector("body").style.animation = "none"
     }
 
 
