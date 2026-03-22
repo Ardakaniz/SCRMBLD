@@ -1,3 +1,90 @@
+let audioStruct = {
+    ctx: null,
+    listener: null,
+
+    swapSound: null,
+    rollSound: null,
+    musicBackgrounds: [],
+    musicLayers: [],
+}
+
+
+function initSound(id) {
+    const soundEl = document.getElementById(id);
+    const src = audioStruct.ctx.createMediaElementSource(soundEl);
+    const pan = audioStruct.ctx.createStereoPanner();
+    src.connect(pan);
+    pan.connect(audioStruct.ctx.destination);
+    return { el: soundEl, src: src, pan: pan.pan };
+}
+
+function initMusic(id) {
+    const ctx = audioStruct.ctx;
+    const src = ctx.createBufferSource();
+    const lpfilter = ctx.createBiquadFilter();
+    const pan = audioStruct.ctx.createStereoPanner();
+    const gain = ctx.createGain();
+    src.connect(lpfilter);
+    lpfilter.connect(pan);
+    pan.connect(gain);
+    gain.connect(ctx.destination);
+
+    lpfilter.type = "lowpass";
+    lpfilter.frequency.setValueAtTime(20000, ctx.currentTime);
+
+    let music = { el: null, src: src, gain: gain.gain, pan: pan.pan, lpfilter: lpfilter };
+
+    music.gain.value = 0;
+    music.src.loop = true;
+
+    if (id < 0)
+        audioStruct.musicBackgrounds.push(music);
+    else
+        audioStruct.musicLayers.push(music);
+
+    fetch(`assets/music/${id}.mp3`)
+        .then(r => r.arrayBuffer())
+        .then(buf => audioStruct.ctx.decodeAudioData(buf))
+        .then(buf => {
+            if (id < 0)
+                audioStruct.musicBackgrounds[Math.abs(id)-1].src.buffer = buf;
+            else
+                audioStruct.musicLayers[id].src.buffer = buf; 
+        })
+        .then(_ => {
+            // console.log(`Loaded music ${id}`);
+            const music = id < 0 ? audioStruct.musicBackgrounds[Math.abs(id)-1] : audioStruct.musicLayers[id];
+            music.src.start();
+            music.gain.setValueAtTime(0, audioStruct.ctx.currentTime);
+            music.pan.setValueAtTime(0, audioStruct.ctx.currentTime);
+        });
+}
+
+function initAudio() {
+    audioStruct.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    audioStruct.listener = audioStruct.ctx.listener;
+
+    audioStruct.swapSound = initSound("swapSound", true);
+    audioStruct.swapSound.pan.setValueAtTime(-0.75, audioStruct.ctx.currentTime);
+
+    audioStruct.rollSound = initSound("rollSound", true);
+    audioStruct.rollSound.pan.setValueAtTime(+0.75, audioStruct.ctx.currentTime);
+
+    for (let i = -2; i <= 8; i++)
+        initMusic(i);
+
+    const lpfilter = audioStruct.musicBackgrounds[1].lpfilter;
+    lpfilter.frequency.setValueAtTime(0, audioStruct.ctx.currentTime);
+}
+
+function startMusics() {
+    if (phraseNum !== 0 && paraphNum !== 0)
+        return;
+    audioStruct.musicLayers[0].gain.setTargetAtTime(1.5, audioStruct.ctx.currentTime + 0.5, 0.5);
+    audioStruct.musicBackgrounds[0].gain.setTargetAtTime(1.5, audioStruct.ctx.currentTime + 0.5, 0.5);
+    audioStruct.musicBackgrounds[1].gain.setTargetAtTime(0.2, audioStruct.ctx.currentTime + 0.5, 0.5);
+}
+
 // paraph[phrase]
 let content = 
     [["hey?",
@@ -32,6 +119,7 @@ let content =
 
 let paraphNum = 0
 let phraseNum = 0;
+let prevMusicLayerNum = null;
 
 let textRef = content[paraphNum][phraseNum];
 let wordsRef = textRef.split(" "); // La phrase de référence
@@ -73,17 +161,21 @@ function spanClicked(e) {
         return;
     }
 
-    
-
     // Clic gauche
     if (e.button === codeSwap) {
+        startMusics();
+
+        audioStruct.swapSound.el.play();
         word = word[1] + word[0] + word.slice(2);
         nbSwap++;
     }
 
     // Clic droit
     else if (e.button === codeRoll) {
-        //word = word[word.length-1] + word.slice(0, -1);
+        startMusics();
+
+        audioStruct.rollSound.el.play();
+        word = word[word.length-1] + word.slice(0, -1);
 
         // DEBUG : clic droit pour transformer le mot en mot bon
         word = wordsRef[target.id.slice(10)];
@@ -101,12 +193,19 @@ function spanClicked(e) {
     // Phrase bonne 
     if (numRightAnswers === numWords) {
         // FIN
-         if(paraphNum == content.length-1 && phraseNum == content[paraphNum].length-1) {
+        if(paraphNum == content.length-1 && phraseNum == content[paraphNum].length-1) {
             ref.style.display = "none";
             document.querySelector("body").style.animation = "none";
             document.querySelector(".download").style.display = "block";
             clearInterval(interval);
-    }
+        }
+
+        // MUSIC CROSS FADE
+        if (prevMusicLayerNum)
+            audioStruct.musicLayers[prevMusicLayerNum].gain.setTargetAtTime(0, audioStruct.ctx.currentTime + 1.5, 0.5);
+        audioStruct.musicLayers[paraphNum+phraseNum].gain.setTargetAtTime(1.5, audioStruct.ctx.currentTime + 1.5, 0.5);
+        prevMusicLayerNum = paraphNum+phraseNum;
+
         setTimeout(()=>{nextPhrase()}, 1000);
     }
 }
@@ -124,6 +223,18 @@ function nextPhrase() {
         emptyPreviousParaphBg(paraphNum);
         if (paraphNum + 1 < content.length) paraphNum ++;
         else return;
+    }
+
+    // Bring arp via opening lowpass
+    if (paraphNum === 3) {
+        const music = audioStruct.musicBackgrounds[1];
+        music.lpfilter.frequency.setValueAtTime(100, audioStruct.ctx.currentTime);
+        music.lpfilter.frequency.setTargetAtTime(700, audioStruct.ctx.currentTime + 5, 5);
+        // TMP
+        music.pan.setValueAtTime(-0.8, audioStruct.ctx.currentTime);
+        music.pan.setTargetAtTime(0.8, audioStruct.ctx.currentTime + 5, 5);
+        music.pan.setTargetAtTime(-0.8, audioStruct.ctx.currentTime + 10, 5);
+        music.pan.setTargetAtTime(+0.8, audioStruct.ctx.currentTime + 15, 5);
     }
     
     fetchASCII(paraphNum, phraseNum);
@@ -151,6 +262,8 @@ function nextPhrase() {
         // INVERSION COMMANDES
         codeSwap = 2;
         codeRoll = 0;
+        audioStruct.swapSound.pan.setValueAtTime(+0.75, audioStruct.ctx.currentTime);
+        audioStruct.rollSound.pan.setValueAtTime(-0.75, audioStruct.ctx.currentTime);
     }
 
     else {
@@ -242,6 +355,12 @@ function initPhrase(words) {
         ref.appendChild(spacespanRef);
     }
 }
+
+// Enable audio whenever user clicked
+document.getElementsByTagName("body")[0].addEventListener("click", _ => {
+    if (!audioStruct.ctx)
+        initAudio();
+})
 
 initPhrase(words);
 fetchASCII(paraphNum, phraseNum);
