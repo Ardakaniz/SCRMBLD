@@ -56,7 +56,11 @@ function initMusic(id) {
             const music = id < 0 ? audioStruct.musicBackgrounds[Math.abs(id)-1] : audioStruct.musicLayers[id];
             music.src.start();
             music.gain.setValueAtTime(0, audioStruct.ctx.currentTime);
-            music.pan.setValueAtTime(0, audioStruct.ctx.currentTime);
+
+            if (id === -2)
+                music.pan.setValueAtTime(0.8, audioStruct.ctx.currentTime);
+            else
+                music.pan.setValueAtTime(0., audioStruct.ctx.currentTime);
         });
 }
 
@@ -73,16 +77,21 @@ function initAudio() {
     for (let i = -2; i <= 8; i++)
         initMusic(i);
 
-    const lpfilter = audioStruct.musicBackgrounds[1].lpfilter;
-    lpfilter.frequency.setValueAtTime(0, audioStruct.ctx.currentTime);
+    const arps = audioStruct.musicBackgrounds[1];
+    arps.lpfilter.frequency.setValueAtTime(0, audioStruct.ctx.currentTime);
+    setInterval(_ => {
+        const music = audioStruct.musicBackgrounds[1]; 
+        const newTarget = (music.pan.value < 0 ? +0.8 : -0.8);
+        music.pan.setTargetAtTime(newTarget, audioStruct.ctx.currentTime + 5, 2);
+    }, 6000);
 }
 
 function startMusics() {
     if (phraseNum !== 0 && paraphNum !== 0)
         return;
-    audioStruct.musicLayers[0].gain.setTargetAtTime(1.5, audioStruct.ctx.currentTime + 0.5, 0.5);
-    audioStruct.musicBackgrounds[0].gain.setTargetAtTime(1.5, audioStruct.ctx.currentTime + 0.5, 0.5);
-    audioStruct.musicBackgrounds[1].gain.setTargetAtTime(0.2, audioStruct.ctx.currentTime + 0.5, 0.5);
+    audioStruct.musicLayers[0].gain.setTargetAtTime(1.75, audioStruct.ctx.currentTime + 0.5, 0.5);
+    audioStruct.musicBackgrounds[0].gain.setTargetAtTime(1.75, audioStruct.ctx.currentTime + 0.5, 0.5);
+    audioStruct.musicBackgrounds[1].gain.setTargetAtTime(0.25, audioStruct.ctx.currentTime + 0.5, 0.5);
 }
 
 // paraph[phrase]
@@ -203,7 +212,7 @@ function spanClicked(e) {
         // MUSIC CROSS FADE
         if (prevMusicLayerNum)
             audioStruct.musicLayers[prevMusicLayerNum].gain.setTargetAtTime(0, audioStruct.ctx.currentTime + 1.5, 0.5);
-        audioStruct.musicLayers[paraphNum+phraseNum].gain.setTargetAtTime(1.5, audioStruct.ctx.currentTime + 1.5, 0.5);
+        audioStruct.musicLayers[paraphNum+phraseNum].gain.setTargetAtTime(1.8, audioStruct.ctx.currentTime + 1.5, 0.5);
         prevMusicLayerNum = paraphNum+phraseNum;
 
         setTimeout(()=>{nextPhrase()}, 1000);
@@ -226,15 +235,10 @@ function nextPhrase() {
     }
 
     // Bring arp via opening lowpass
-    if (paraphNum === 3) {
+    if (paraphNum >= 3) {
+        const paraphDelta = paraphNum - 3 + 1;
         const music = audioStruct.musicBackgrounds[1];
-        music.lpfilter.frequency.setValueAtTime(100, audioStruct.ctx.currentTime);
-        music.lpfilter.frequency.setTargetAtTime(700, audioStruct.ctx.currentTime + 5, 5);
-        // TMP
-        music.pan.setValueAtTime(-0.8, audioStruct.ctx.currentTime);
-        music.pan.setTargetAtTime(0.8, audioStruct.ctx.currentTime + 5, 5);
-        music.pan.setTargetAtTime(-0.8, audioStruct.ctx.currentTime + 10, 5);
-        music.pan.setTargetAtTime(+0.8, audioStruct.ctx.currentTime + 15, 5);
+        music.lpfilter.frequency.setTargetAtTime(paraphDelta*300, audioStruct.ctx.currentTime + 5, 5);
     }
     
     fetchASCII(paraphNum, phraseNum);
