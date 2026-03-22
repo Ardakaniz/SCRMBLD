@@ -187,7 +187,7 @@ function spanClicked(e) {
         word = word[word.length-1] + word.slice(0, -1);
 
         // DEBUG : clic droit pour transformer le mot en mot bon
-        word = wordsRef[target.id.slice(10)];
+        // word = wordsRef[target.id.slice(10)];
         nbRoll++;
     }
 
