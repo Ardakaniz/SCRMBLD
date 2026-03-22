@@ -40,14 +40,27 @@ let words = wordsRef.map(shuffleWord); // La phrase shuffled
 let numRightAnswers = 0; // Nombre de mots bons / phrase
 let numWords = words.length; // Nom de mots dans la phrase
 
+let nbClick = 0;
+let nbSwap = 0;
+let nbRoll = 0;
+
+let totalTime = 0;
 
 let ref = document.getElementById("ref");
 let scrambled = document.getElementById("scrambled");
 
 let reversed = false;
+let codeSwap = 0;
+let codeRoll = 2;
+
 
 function spanClicked(e) {
     e.preventDefault();
+    nbClick ++;
+
+    if (nbClick == 1) {
+        timer();
+    }
 
     let target = e.target;
 
@@ -60,18 +73,21 @@ function spanClicked(e) {
         return;
     }
 
+    
+
     // Clic gauche
-    if (e.button === 0) {
+    if (e.button === codeSwap) {
         word = word[1] + word[0] + word.slice(2);
+        nbSwap++;
     }
 
     // Clic droit
-    else if (e.button === 2) {
+    else if (e.button === codeRoll) {
         //word = word[word.length-1] + word.slice(0, -1);
 
         // DEBUG : clic droit pour transformer le mot en mot bon
         word = wordsRef[target.id.slice(10)];
-
+        nbRoll++;
     }
 
     target.innerHTML = "<span class='begin-letter'>" + word.slice(0, 2) + "</span>" + word.slice(2);
@@ -84,6 +100,13 @@ function spanClicked(e) {
 
     // Phrase bonne 
     if (numRightAnswers === numWords) {
+        // FIN
+         if(paraphNum == content.length-1 && phraseNum == content[paraphNum].length-1) {
+            ref.style.display = "none";
+            document.querySelector("body").style.animation = "none";
+            document.querySelector(".download").style.display = "block";
+            clearInterval(interval);
+    }
         setTimeout(()=>{nextPhrase()}, 1000);
     }
 }
@@ -120,8 +143,16 @@ function nextPhrase() {
     else if (paraphNum == 6) {
         ref.style.display = "none";
         document.querySelector("body").style.animation = "none"
-
     }
+    else if (paraphNum == 3 && phraseNum == 2) {
+        ref.style.display = "block";
+        document.querySelector("body").style.animation = "none";
+
+        // INVERSION COMMANDES
+        codeSwap = 2;
+        codeRoll = 0;
+    }
+
     else {
         ref.style.display = "block";
         document.querySelector("body").style.animation = "none"
@@ -154,14 +185,14 @@ function fetchASCII(paraph, phrase) {
                 }
                 return x.text()
             })
-            .then(t => {
+            .then(time => {
                 let bg = document.createElement("pre");
                 bg.id = `bg-${paraph}-${phrase}`;
                 bg.classList.add("bg");
-                bg.innerText = t;
+                bg.innerText = time;
                 document.getElementById("bgs").appendChild(bg);
             })
-            .catch(console.error("Erreur fecth ASCII"));
+            .catch();
 }
 
 function vanishBG(paraphNum, phraseNum) {
@@ -215,24 +246,103 @@ function initPhrase(words) {
 initPhrase(words);
 fetchASCII(paraphNum, phraseNum);
 
-var myFont = new FontFace('myFont', 'url(fonts/BlueScreen.ttf)');
+var BlueScreen = new FontFace('BlueScreen', 'url(fonts/BlueScreen.ttf)');
+var PixelTwist = new FontFace('PixelTwist', 'url(fonts/PixelTwist.ttf)');
 
-myFont.load().then(() => {
-    document.fonts.add(myFont);
-    const myCanvas = document.getElementById("card");
-    const ctx = myCanvas.getContext("2d");
-        ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, 400, 250);
-	ctx.font = "20px myFont"; // set font
-    ctx.fillStyle = "#000000"; 
-    ctx.font = "16px myFont"; // set font
-    ctx.fillText("+++++++++++++++++++++++++++++++++++++",10,30);
-    ctx.fillText("SCRMBLD",70,70);
-    
-    ctx.font = "16px Arial"; // set font
-    ctx.fillText("00:00:23",70,100);
-    ctx.fillText("123 <->",80,120);
+const myCanvas = document.getElementById("card");
+const ctx = myCanvas.getContext("2d");
 
+
+PixelTwist.load().then(() => {
+    document.fonts.add(BlueScreen);
+    document.fonts.add(PixelTwist);
 })
 
 
+// Timer du jeu
+
+var time = 0;
+var tString = "00:00:00";
+
+let interval;
+
+function tick() {
+    time++;
+}
+
+function add() {
+    tick();
+    document.querySelector(".timer").innerHTML = time;
+
+    let s = time%60;
+    let m = Math.floor(time/60)%60;
+    let h = Math.floor(time/60/60);
+    s = s < 10 ? '0'+s : s ;
+    m = m < 10 ? '0'+m : m ;
+    h = h < 10 ? '0'+h : h ;
+    tString = String(h + ":" + m + ":" +s)
+    document.querySelector(".timer-string").innerHTML = tString;
+}
+
+function timer() {
+    interval = setInterval(add, 1000);
+}
+
+
+function downloadCard() {
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, 400, 250);
+	ctx.font = "50px BlueScreen";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.2)"; 
+
+    let l1 = shuffleWord("CRMBLDSCRMDSCRMBLD")
+    let l2 = shuffleWord("CRMBLDSCRMDSCRMBLD")
+    let l3 = shuffleWord("CRMBLDSCRMDSCRMBLD")
+
+    ctx.fillText(`${l1}`,0,80);
+    ctx.fillText(`${l2}`,0,145);
+    ctx.fillText(`${l3}`,0,210);
+
+    ctx.fillStyle = "#ffffff"; 
+
+    ctx.font = "50px PixelTwist";
+    ctx.fillText(`${tString}`,70,100);
+
+    ctx.font = "30px PixelTwist";
+    ctx.fillText(`${nbSwap}`,100,150);
+    ctx.fillText(`${nbRoll}`,100,200);
+    
+    ctx.font = "30px Arial";
+    ctx.fillText("↔",60,150);
+    ctx.fillText("→",60,200);
+    
+    ctx.fillText("+-+-+-+-+-+-+-++-+-+-++-+-+-+",0,30);
+    ctx.fillText("--+-+-+-+-+-+-+-+-+-+-+-++-+-+-+",0,240);
+
+    const dataURL = myCanvas.toDataURL("image/jpg");
+    const link = document.createElement("a");
+    link.href = dataURL;
+
+    const today = new Date();
+    let h = today.getHours();
+    let m = today.getMinutes();
+    let s = today.getSeconds();
+    let day = today.getDate();
+    let month = today.getMonth() + 1;
+
+    h = (h < 10 ? "0" : "") + h;
+    m = (m < 10 ? "0" : "") + m;
+    s = (s < 10 ? "0" : "") + s;
+    day = (day < 10 ? "0" : "") + day;
+    month = (month < 10 ? "0" : "") + month;
+
+    let year = today.getFullYear();
+    
+    let formattedDate =  year+"-"+month+"-"+day+"--"+h+"-"+m+"-"+s;
+  
+  
+    link.download = `SCRMBLD-${formattedDate}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}

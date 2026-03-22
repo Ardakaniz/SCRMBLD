@@ -106,5 +106,46 @@ main {
 }
 
 #card {
+    display: none;
     position: absolute;
+}
+
+.download {
+    display: none;
+    font-size: 40px;
+    padding: 20px;
+    color: #bababa;
+    margin-top: 30px;
+    font-weight: bold;
+    transition: 0.5s;
+    animation: appear 1s;
+}
+
+.download:hover {
+    background: #bababa;
+    color: black;
+    cursor: pointer;
+    transition: 0.5s;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+footer {
+    position: absolute;
+    bottom: 100px;
+    color: #bababa4a;
+}
+
+.timer, .timer-string {
+    display: none;
+}
+
+a {
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.5);
 }
