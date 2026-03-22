@@ -21,7 +21,7 @@ html {
     user-select: none;
     background-color: black;
     color:#bababa;
-        overflow: hidden;
+    overflow: hidden;
 }
 
 main {
@@ -113,7 +113,7 @@ main {
 .download {
     display: none;
     font-size: 40px;
-    padding: 20px;
+    padding: 20px 43px;
     color: #bababa;
     margin-top: 30px;
     font-weight: bold;
@@ -122,8 +122,9 @@ main {
 }
 
 .download:hover {
-    background: #bababa;
-    color: black;
+    background-color: #bababa;
+    box-shadow:  0px 0px 10px 10px #bababa;    
+    color:black;
     cursor: pointer;
     transition: 0.5s;
 }
