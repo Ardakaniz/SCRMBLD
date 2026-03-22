@@ -1,3 +1,5 @@
+let DEBUG = false;
+
 let audioStruct = {
     ctx: null,
     listener: null,
@@ -204,7 +206,7 @@ function spanClicked(e) {
         word = word[word.length-1] + word.slice(0, -1);
 
         // DEBUG : clic droit pour transformer le mot en mot bon
-        word = wordsRef[target.id.slice(10)];
+        if (DEBUG) word = wordsRef[target.id.slice(10)];
         nbRoll++;
     }
 
