@@ -283,12 +283,12 @@ function shuffleWord(w) {
         .sort((a, b) => a.sort - b.sort)
         .map(({ value }) => value).join("")
 
+    //TODO : empêcher boucle infinie
     if (w == shuffled) {
         if (w.length > 3) return shuffleWord(w);
         else { numRightAnswers++ };
         }
 
-    //TODO : empêcher boucle infinie
 
     return shuffled;
 }
