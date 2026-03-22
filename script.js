@@ -463,9 +463,11 @@ function downloadCard() {
     
     let formattedDate =  year+"-"+month+"-"+day+"--"+h+"-"+m+"-"+s;
   
-  
-    link.download = `SCRMBLD-${formattedDate}.jpg`;
+    // link.download = `SCRMBLD-${formattedDate}.jpg`;
+    link.target = "blank"
     document.body.appendChild(link);
-    link.click();
+    link.click()
     document.body.removeChild(link);
+
 }
+
